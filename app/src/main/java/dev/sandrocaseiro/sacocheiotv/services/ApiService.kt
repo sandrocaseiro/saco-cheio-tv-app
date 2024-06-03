@@ -2,6 +2,7 @@ package dev.sandrocaseiro.sacocheiotv.services
 
 import android.util.Log
 import dev.sandrocaseiro.sacocheiotv.models.api.AEpisode
+import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 import io.ktor.client.HttpClient
 import io.ktor.client.request.cookie
 import io.ktor.client.request.get
@@ -118,14 +119,26 @@ class ApiService {
         return eps
     }
 
-    suspend fun getEpisodeVideoUrl(show: String, episodeSlug: String): String? {
+    suspend fun getEpisodeMediaUrls(show: String, episodeSlug: String): Map<VEpisodeMedia, String> {
+        val media = mutableMapOf<VEpisodeMedia, String>()
         val episodeInfo = getEpisodeInfo(show, episodeSlug)
-        if (episodeInfo[EPISODE_VIDEO_URL] == null || episodeInfo[EPISODE_VIDEO_URL] == "")
-            return null
+        if (episodeInfo[EPISODE_VIDEO_URL] != null && episodeInfo[EPISODE_VIDEO_URL] != "") {
+            val videoUrls = getVideoUrls(episodeInfo[EPISODE_VIDEO_URL].toString())
+            if (videoUrls["1080p"] != null)
+                media[VEpisodeMedia.VIDEO] = videoUrls["1080p"]!!
+            else if (videoUrls["720p"] != null)
+                media[VEpisodeMedia.VIDEO] = videoUrls["720p"]!!
+            else
+                media[VEpisodeMedia.VIDEO] = videoUrls["480p"]!!
+        }
 
-        val videoUrls = getVideoUrls(episodeInfo[EPISODE_VIDEO_URL].toString())
+        if (episodeInfo[EPISODE_AUDIO_URL] != null && episodeInfo[EPISODE_AUDIO_URL] != "") {
+            media[VEpisodeMedia.AUDIO] = episodeInfo[EPISODE_AUDIO_URL].toString()
+        }
 
-        return videoUrls["1080p"]
+        Log.d(TAG, "Media info: $media")
+
+        return media
     }
 
     companion object {
@@ -133,5 +146,6 @@ class ApiService {
         private const val AUTH = "1234"
 
         private const val EPISODE_VIDEO_URL = "urlMp4"
+        private const val EPISODE_AUDIO_URL = "urlMp3"
     }
 }

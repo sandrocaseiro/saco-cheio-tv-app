@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.sandrocaseiro.sacocheiotv.models.entities.EEpisode
+import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 import dev.sandrocaseiro.sacocheiotv.services.EpisodeService
 
 import kotlinx.coroutines.launch
@@ -14,7 +15,7 @@ class EpisodeDetailsViewModel : ViewModel() {
     private val episodeService = EpisodeService()
 
     val episode = MutableLiveData<EEpisode>()
-    val videoUrl = MutableLiveData<String?>()
+    val media = MutableLiveData<Map<VEpisodeMedia, String>>()
     val watched = MutableLiveData<Boolean>()
 
     fun getEpisode(show: String, episodeId: Int, context: Context) {
@@ -23,9 +24,9 @@ class EpisodeDetailsViewModel : ViewModel() {
         }
     }
 
-    fun getEpisodeVideoUrl(show: String, episodeSlug: String, context: Context) {
+    fun getEpisodeMedia(show: String, episodeSlug: String, context: Context) {
         viewModelScope.launch {
-            videoUrl.value = episodeService.getVideoUrl(show, episodeSlug)
+            media.value = episodeService.getMediaUrls(show, episodeSlug)
         }
     }
 

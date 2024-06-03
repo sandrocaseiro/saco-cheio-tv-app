@@ -7,6 +7,7 @@ import dev.sandrocaseiro.sacocheiotv.mappings.toVEpisode
 import dev.sandrocaseiro.sacocheiotv.models.entities.EEpisode
 import dev.sandrocaseiro.sacocheiotv.models.entities.EShow
 import dev.sandrocaseiro.sacocheiotv.models.views.VEpisode
+import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 
 class EpisodeService {
     private val apiService = ApiService()
@@ -38,8 +39,8 @@ class EpisodeService {
         return dao.get(showId, episodeId)
     }
 
-    suspend fun getVideoUrl(show: String, episodeSlug: String): String? {
-        return apiService.getEpisodeVideoUrl(show, episodeSlug)
+    suspend fun getMediaUrls(show: String, episodeSlug: String): Map<VEpisodeMedia, String> {
+        return apiService.getEpisodeMediaUrls(show, episodeSlug)
     }
 
     suspend fun toggleWatchedStatus(showId: String, episodeId: Int, context: Context) {

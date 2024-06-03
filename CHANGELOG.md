@@ -1,3 +1,7 @@
+## 1.3 (2024-06-03)
+
+* Added support to both audio and video episodes
+
 ## 1.2 (2024-06-03)
 
 * Update episode watch status in the main screen on resume

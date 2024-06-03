@@ -27,6 +27,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TimeBar
 import dev.sandrocaseiro.sacocheiotv.R
@@ -34,6 +35,7 @@ import dev.sandrocaseiro.sacocheiotv.activities.EpisodeDetailsActivity
 import dev.sandrocaseiro.sacocheiotv.activities.VideoPlaybackActivity
 import dev.sandrocaseiro.sacocheiotv.models.viewmodels.VideoPlaybackViewModel
 import dev.sandrocaseiro.sacocheiotv.models.views.VEpisode
+import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 import dev.sandrocaseiro.sacocheiotv.services.EpisodeScreenSaverService
 import java.util.Date
 import kotlin.time.Duration.Companion.minutes
@@ -41,6 +43,7 @@ import kotlin.time.Duration.Companion.seconds
 import androidx.media3.ui.R as UIR
 
 
+//TODO: Add a background/image when playing audio only
 class VideoPlaybackFragment : Fragment() {
 
     private lateinit var mHandler: Handler
@@ -86,19 +89,30 @@ class VideoPlaybackFragment : Fragment() {
 
         mEpisode =
             activity?.intent?.getSerializableExtra(EpisodeDetailsActivity.EPISODE) as VEpisode
-        val videoUrl = activity?.intent?.getStringExtra(VideoPlaybackActivity.VIDEO_URL)
+        val mediaUrl = activity?.intent?.getStringExtra(VideoPlaybackActivity.MEDIA_URL)
+        val mediaType =
+            activity?.intent?.getSerializableExtra(VideoPlaybackActivity.MEDIA_TYPE) as VEpisodeMedia
 
-        Log.i(TAG, "Video URL: $videoUrl")
-
-        val mediaItem =
-            MediaItem.Builder().setUri(Uri.parse(videoUrl)).setMimeType(MimeTypes.APPLICATION_M3U8)
-                .build()
+        Log.i(TAG, "Media URL: $mediaUrl")
 
         val factory = DefaultHttpDataSource.Factory().apply {
-            setDefaultRequestProperties(mapOf("referer" to "https://sacocheio.tv/"))
+            setDefaultRequestProperties(
+                mapOf(
+                    "referer" to "https://sacocheio.tv/",
+                    "user-agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 OPR/110.0.0.0"
+                )
+            )
         }
 
-        val mediaSource = HlsMediaSource.Factory(factory).createMediaSource(mediaItem)
+        var mediaBuilder = MediaItem.Builder().setUri(Uri.parse(mediaUrl))
+        if (mediaType == VEpisodeMedia.VIDEO)
+            mediaBuilder = mediaBuilder
+                .setMimeType(MimeTypes.APPLICATION_M3U8)
+
+        val mediaSource = if (mediaType == VEpisodeMedia.VIDEO)
+            HlsMediaSource.Factory(factory).createMediaSource(mediaBuilder.build())
+        else
+            ProgressiveMediaSource.Factory(factory).createMediaSource(mediaBuilder.build())
 
         mPlayer = ExoPlayer.Builder(requireContext())
             .setSeekBackIncrementMs(SEEK_STEP)

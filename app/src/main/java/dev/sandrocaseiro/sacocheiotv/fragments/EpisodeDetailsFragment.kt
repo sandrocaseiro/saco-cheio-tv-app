@@ -28,6 +28,7 @@ import dev.sandrocaseiro.sacocheiotv.activities.VideoPlaybackActivity
 import dev.sandrocaseiro.sacocheiotv.models.entities.EEpisode
 import dev.sandrocaseiro.sacocheiotv.models.viewmodels.EpisodeDetailsViewModel
 import dev.sandrocaseiro.sacocheiotv.models.views.VEpisode
+import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 import dev.sandrocaseiro.sacocheiotv.presenters.EpisodeDetailsPresenter
 
 /**
@@ -38,7 +39,7 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
 
     private var mSelectedEpisode: VEpisode? = null
     private var mEpisode: EEpisode? = null
-    private var mVideoUrl: String? = null
+    private var mMediaUrls: Map<VEpisodeMedia, String> = mapOf()
     private var mIsWatched: Boolean = false
 
     private lateinit var mDetailsBackground: DetailsSupportFragmentBackgroundController
@@ -69,7 +70,7 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
 
             observeViewModel()
             vm.getEpisode(mSelectedEpisode!!.showId, mSelectedEpisode!!.id, requireContext())
-            vm.getEpisodeVideoUrl(mSelectedEpisode!!.showId, mSelectedEpisode!!.slug, requireContext())
+            vm.getEpisodeMedia(mSelectedEpisode!!.showId, mSelectedEpisode!!.slug, requireContext())
         } else {
             val intent = Intent(requireActivity(), MainActivity::class.java)
             startActivity(intent)
@@ -99,8 +100,8 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
             mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size())
         }
 
-        vm.videoUrl.observe(this) {
-            mVideoUrl = it
+        vm.media.observe(this) {
+            mMediaUrls = it
             updateActions()
         }
 
@@ -111,23 +112,28 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
     }
 
     private fun updateActions() {
-        if (mVideoUrl == null) {
-            (mActionAdapter[0] as Action).apply {
-                label1 =  resources.getString(R.string.watch_unavailable_1)
-                label2 =  resources.getString(R.string.watch_unavailable_2)
-            }
-            mActionAdapter.notifyArrayItemRangeChanged(0,  mActionAdapter.size())
-        }
-        else {
-            (mActionAdapter[0] as Action).apply {
-                label1 =  resources.getString(R.string.watch_1)
-                label2 =  resources.getString(R.string.watch_2)
-            }
-        }
-
-        (mActionAdapter[1] as Action).apply {
-            label2 = if (!mIsWatched) resources.getString(R.string.mark_as_watched) else resources.getString(R.string.mark_as_unwatched)
-        }
+        mActionAdapter.clear()
+        mActionAdapter.add(
+            Action(
+                ACTION_WATCH,
+                resources.getString(R.string.watch_1),
+                if (mMediaUrls[VEpisodeMedia.VIDEO] != null) resources.getString(R.string.watch_2) else resources.getString(R.string.watch_unavailable)
+            )
+        )
+        mActionAdapter.add(
+            Action(
+                ACTION_LISTEN,
+                resources.getString(R.string.listen_1),
+                if (mMediaUrls[VEpisodeMedia.AUDIO] != null) resources.getString(R.string.listen_2) else resources.getString(R.string.listen_unavailable)
+            )
+        )
+        mActionAdapter.add(
+            Action(
+                ACTION_MARK_AS,
+                resources.getString(R.string.mark_as_1),
+                if (!mIsWatched) resources.getString(R.string.mark_as_watched) else resources.getString(R.string.mark_as_unwatched)
+            )
+        )
 
         mActionAdapter.notifyArrayItemRangeChanged(0,  mActionAdapter.size())
     }
@@ -171,21 +177,6 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
             })
 
         mActionAdapter = ArrayObjectAdapter()
-
-        mActionAdapter.add(
-            Action(
-                ACTION_WATCH,
-                resources.getString(R.string.watch_1),
-                resources.getString(R.string.watch_2)
-            )
-        )
-        mActionAdapter.add(
-            Action(
-                ACTION_MARK_AS,
-                resources.getString(R.string.mark_as_1),
-                if (mIsWatched) resources.getString(R.string.mark_as_watched) else resources.getString(R.string.mark_as_unwatched)
-            )
-        )
         row.actionsAdapter = mActionAdapter
 
         mAdapter.add(row)
@@ -205,14 +196,18 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
         detailsPresenter.isParticipatingEntranceTransition = true
 
         detailsPresenter.onActionClickedListener = OnActionClickedListener { action ->
-            if (action.id == ACTION_WATCH) {
-                if (mVideoUrl == null) {
-                    Toast.makeText(requireActivity(), "Waiting for video information", Toast.LENGTH_SHORT).show()
+            if (action.id == ACTION_WATCH || action.id == ACTION_LISTEN) {
+                if (mMediaUrls.isEmpty()) {
+                    Toast.makeText(requireActivity(), "Waiting for media information", Toast.LENGTH_SHORT).show()
                     return@OnActionClickedListener
                 }
+                
+                val mediaType = if (action.id == ACTION_WATCH) VEpisodeMedia.VIDEO else VEpisodeMedia.AUDIO
+
                 val intent = Intent(requireActivity(), VideoPlaybackActivity::class.java)
                 intent.putExtra(VideoPlaybackActivity.EPISODE, mSelectedEpisode)
-                intent.putExtra(VideoPlaybackActivity.VIDEO_URL, mVideoUrl)
+                intent.putExtra(VideoPlaybackActivity.MEDIA_URL, mMediaUrls[mediaType])
+                intent.putExtra(VideoPlaybackActivity.MEDIA_TYPE, mediaType)
                 startActivity(intent)
             }
             else if (action.id == ACTION_MARK_AS) {
@@ -232,6 +227,7 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
         private const val TAG = "EpisodeDetailsFragment"
 
         private const val ACTION_WATCH = 1L
+        private const val ACTION_LISTEN = 3L
         private const val ACTION_MARK_AS = 2L
 
         private const val DETAIL_THUMB_WIDTH = 474

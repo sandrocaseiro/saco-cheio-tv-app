@@ -7,8 +7,10 @@
     <string name="personal_settings">Personal Settings</string>
     <string name="watch_1">Watch</string>
     <string name="watch_2">Episode</string>
-    <string name="watch_unavailable_1">Episode</string>
-    <string name="watch_unavailable_2">Unavailable</string>
+    <string name="watch_unavailable">Unavailable</string>
+    <string name="listen_1">Listen</string>
+    <string name="listen_2">Episode</string>
+    <string name="listen_unavailable">Unavailable</string>
     <string name="mark_as_1">Mark as</string>
     <string name="mark_as_watched">Watched</string>
     <string name="mark_as_unwatched">Unwatched</string>

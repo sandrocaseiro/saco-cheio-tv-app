@@ -18,7 +18,8 @@ class VideoPlaybackActivity : FragmentActivity() {
     }
 
     companion object {
-        const val VIDEO_URL = "Video URL"
+        const val MEDIA_URL = "Media URL"
+        const val MEDIA_TYPE = "Media Type"
         const val EPISODE = "Episode"
     }
 }
