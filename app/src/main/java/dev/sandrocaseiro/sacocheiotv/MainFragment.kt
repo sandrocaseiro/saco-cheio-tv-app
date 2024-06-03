@@ -1,20 +1,19 @@
 package dev.sandrocaseiro.sacocheiotv
 
-import java.util.Collections
-import java.util.Timer
-import java.util.TimerTask
-
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.DisplayMetrics
+import android.util.Log
+import android.view.View
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.ContextCompat
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.HeaderItem
-import dev.sandrocaseiro.sacocheiotv.views.ImageCardView
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
@@ -22,12 +21,6 @@ import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
 import androidx.leanback.widget.Row
 import androidx.leanback.widget.RowPresenter
-import androidx.core.app.ActivityOptionsCompat
-import androidx.core.content.ContextCompat
-import android.util.DisplayMetrics
-import android.util.Log
-import android.view.View
-
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
@@ -35,6 +28,9 @@ import dev.sandrocaseiro.sacocheiotv.activities.EpisodeDetailsActivity
 import dev.sandrocaseiro.sacocheiotv.models.viewmodels.MainViewModel
 import dev.sandrocaseiro.sacocheiotv.models.views.VEpisode
 import dev.sandrocaseiro.sacocheiotv.presenters.EpisodeCardPresenter
+import dev.sandrocaseiro.sacocheiotv.views.ImageCardView
+import java.util.Timer
+import java.util.TimerTask
 
 /**
  * Loads a grid of cards with movies to browse.
@@ -47,6 +43,8 @@ class MainFragment : BrowseSupportFragment() {
     private lateinit var mMetrics: DisplayMetrics
     private var mBackgroundTimer: Timer? = null
     private var mBackgroundUri: String? = null
+    private var mSelectedEpisode: VEpisode? = null
+    private var mSelectedRow: Row? = null
 
     private val vm = MainViewModel()
 
@@ -65,7 +63,9 @@ class MainFragment : BrowseSupportFragment() {
     override fun onResume() {
         super.onResume()
 
-//        vm.getAllShows(requireContext())
+        if (mSelectedEpisode != null) {
+            vm.getUpdatedEpisodeInfo(mSelectedEpisode!!, requireContext())
+        }
     }
 
     override fun onDestroy() {
@@ -113,6 +113,19 @@ class MainFragment : BrowseSupportFragment() {
                 it.notifyArrayItemRangeChanged(0, shows.size)
             }
         }
+
+        vm.episodeInfo.observe(viewLifecycleOwner) {
+            if (mSelectedRow == null || mSelectedEpisode == null)
+                return@observe
+
+            val adapter = ((mSelectedRow as ListRow).adapter as ArrayObjectAdapter)
+            val index = adapter.indexOf(mSelectedEpisode)
+            adapter.replace(index, it)
+            adapter.notifyArrayItemRangeChanged(index, 1)
+
+            mSelectedRow = null
+            mSelectedEpisode = null
+        }
     }
 
     private fun loadRows() {
@@ -142,6 +155,9 @@ class MainFragment : BrowseSupportFragment() {
                 Log.d(TAG, "Item: $item")
                 val intent = Intent(activity!!, EpisodeDetailsActivity::class.java)
                 intent.putExtra(EpisodeDetailsActivity.EPISODE, item)
+
+                mSelectedEpisode = item
+                mSelectedRow = row
 
                 val bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         activity!!,
