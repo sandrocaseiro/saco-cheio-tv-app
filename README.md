@@ -4,4 +4,4 @@ This app makes it possible to watch any of Saco Cheio TV Podcast episodes in you
 
 ## Disclaimer
 
-This is a fan project. I built this so I can enjoys all podcasts directly on my TV. I have no relations with Saco Cheio TV or any of its members.
+This is a fan project. I built this so I can enjoy all podcasts directly on my TV. I have no relations with Saco Cheio TV or any of its members.

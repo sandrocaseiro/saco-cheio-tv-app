@@ -9,10 +9,12 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
 import androidx.fragment.app.Fragment
@@ -32,9 +34,8 @@ import dev.sandrocaseiro.sacocheiotv.activities.EpisodeDetailsActivity
 import dev.sandrocaseiro.sacocheiotv.activities.VideoPlaybackActivity
 import dev.sandrocaseiro.sacocheiotv.models.viewmodels.VideoPlaybackViewModel
 import dev.sandrocaseiro.sacocheiotv.models.views.VEpisode
+import dev.sandrocaseiro.sacocheiotv.services.EpisodeScreenSaverService
 import java.util.Date
-import java.util.Timer
-import java.util.TimerTask
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import androidx.media3.ui.R as UIR
@@ -130,6 +131,7 @@ class VideoPlaybackFragment : Fragment() {
     }
 
     private fun startTimer() {
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val filter = IntentFilter()
         filter.addAction(BROADCAST_ACTION)
         requireActivity().registerReceiver(mBroadcastReceiver, filter)
@@ -155,6 +157,8 @@ class VideoPlaybackFragment : Fragment() {
     }
 
     private fun stopTimer() {
+        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         val alarms = requireContext().getSystemService(
             Context.ALARM_SERVICE
         ) as AlarmManager
@@ -163,6 +167,30 @@ class VideoPlaybackFragment : Fragment() {
             mSavePositionPendingIntent = null
             requireActivity().unregisterReceiver(mBroadcastReceiver)
         }
+    }
+
+    private fun startScreensaver() {
+        // Trigger the screensaver after a delay
+        Log.d(TAG, "Registering screen saver")
+        Handler(Looper.getMainLooper()).postDelayed({
+            Log.d(TAG, "Starting screen saver")
+            requireActivity().startService(
+                Intent(
+                    requireContext(),
+                    EpisodeScreenSaverService::class.java
+                )
+            )
+        }, SCREENSAVER_DELAY)
+    }
+
+    private fun stopScreensaver() {
+        Log.d(TAG, "Stopping screen saver")
+        requireActivity().stopService(
+            Intent(
+                requireContext(),
+                EpisodeScreenSaverService::class.java
+            )
+        )
     }
 
     private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -187,8 +215,10 @@ class VideoPlaybackFragment : Fragment() {
             super.onIsPlayingChanged(isPlaying)
             if (isPlaying) {
                 startTimer()
+//                stopScreensaver()
             } else {
                 stopTimer()
+//                startScreensaver()
             }
         }
 
@@ -217,5 +247,6 @@ class VideoPlaybackFragment : Fragment() {
 
         private val SEEK_STEP = 10.seconds.inWholeMilliseconds
         private val BACKGROUND_UPDATE_DELAY = 1.minutes.inWholeMilliseconds
+        private val SCREENSAVER_DELAY = 5.seconds.inWholeMilliseconds
     }
 }
