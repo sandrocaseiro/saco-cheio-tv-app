@@ -24,9 +24,9 @@ class EpisodeDetailsViewModel : ViewModel() {
         }
     }
 
-    fun getEpisodeMedia(show: String, episodeSlug: String, context: Context) {
+    fun getEpisodeMedia(authHash: String, show: String, episodeSlug: String) {
         viewModelScope.launch {
-            media.value = episodeService.getMediaUrls(show, episodeSlug)
+            media.value = episodeService.getMediaUrls(authHash, show, episodeSlug)
         }
     }
 

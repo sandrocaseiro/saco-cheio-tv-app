@@ -1,6 +1,8 @@
 package dev.sandrocaseiro.sacocheiotv
 
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
@@ -47,10 +49,13 @@ class MainFragment : BrowseSupportFragment() {
     private var mSelectedRow: Row? = null
 
     private val vm = MainViewModel()
+    private lateinit var mPrefs: SharedPreferences
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Log.i(TAG, "onCreate")
         super.onViewCreated(view, savedInstanceState)
+
+        mPrefs = requireActivity().getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
 
         prepareBackgroundManager()
         setupUIElements()
@@ -108,7 +113,7 @@ class MainFragment : BrowseSupportFragment() {
                     it.add(listRow)
                     listRowAdapter.add(null)
 
-                    vm.getAllEpisodes(show, listRowAdapter, requireContext())
+                    vm.getAllEpisodes(mPrefs.getString(Constants.AUTH_HASH, "")!!, show, listRowAdapter, requireContext())
                 }
                 it.notifyArrayItemRangeChanged(0, shows.size)
             }

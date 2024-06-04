@@ -1,7 +1,9 @@
 package dev.sandrocaseiro.sacocheiotv.fragments
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.graphics.drawable.Drawable
@@ -21,6 +23,7 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
+import dev.sandrocaseiro.sacocheiotv.Constants
 import dev.sandrocaseiro.sacocheiotv.MainActivity
 import dev.sandrocaseiro.sacocheiotv.R
 import dev.sandrocaseiro.sacocheiotv.activities.EpisodeDetailsActivity
@@ -47,6 +50,7 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
     private lateinit var mAdapter: ArrayObjectAdapter
     private lateinit var mActionAdapter: ArrayObjectAdapter
 
+    private lateinit var mPrefs: SharedPreferences
     private val vm = EpisodeDetailsViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +58,7 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
         super.onCreate(savedInstanceState)
 
         mDetailsBackground = DetailsSupportFragmentBackgroundController(this)
+        mPrefs = requireActivity().getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
 
         mSelectedEpisode =
             requireActivity().intent.getSerializableExtra(EpisodeDetailsActivity.EPISODE) as VEpisode
@@ -70,7 +75,7 @@ class EpisodeDetailsFragment : DetailsSupportFragment() {
 
             observeViewModel()
             vm.getEpisode(mSelectedEpisode!!.showId, mSelectedEpisode!!.id, requireContext())
-            vm.getEpisodeMedia(mSelectedEpisode!!.showId, mSelectedEpisode!!.slug, requireContext())
+            vm.getEpisodeMedia(mPrefs.getString(Constants.AUTH_HASH, "")!!, mSelectedEpisode!!.showId, mSelectedEpisode!!.slug)
         } else {
             val intent = Intent(requireActivity(), MainActivity::class.java)
             startActivity(intent)

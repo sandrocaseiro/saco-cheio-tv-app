@@ -1,3 +1,7 @@
+## 1.4 (2024-06-03)
+
+* Dynamic authentication
+
 ## 1.3 (2024-06-03)
 
 * Added support to both audio and video episodes

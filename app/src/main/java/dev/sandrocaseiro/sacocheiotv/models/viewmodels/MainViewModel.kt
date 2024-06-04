@@ -25,9 +25,9 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    fun getAllEpisodes(show: EShow, adapter: ArrayObjectAdapter, context: Context) {
+    fun getAllEpisodes(authHash: String, show: EShow, adapter: ArrayObjectAdapter, context: Context) {
         viewModelScope.launch {
-            val eps = episodeService.getAllFromShow(show, context)
+            val eps = episodeService.getAllFromShow(authHash, show, context)
             adapter.clear()
             adapter.addAll(0, eps)
             adapter.notifyArrayItemRangeChanged(0, eps.size)

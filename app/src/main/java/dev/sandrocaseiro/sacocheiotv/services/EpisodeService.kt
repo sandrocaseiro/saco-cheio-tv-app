@@ -12,10 +12,10 @@ import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 class EpisodeService {
     private val apiService = ApiService()
 
-    suspend fun getAllFromShow(show: EShow, context: Context): List<VEpisode> {
+    suspend fun getAllFromShow(authHash: String, show: EShow, context: Context): List<VEpisode> {
         val dao = AppDatabase.buildDatabase(context).episodeDao()
         val localEps = dao.getAllEpisodesFromShow(show.id)
-        val apiEps = apiService.getEpisodes(show.id)
+        val apiEps = apiService.getEpisodes(authHash, show.id)
         val eps = mutableListOf<VEpisode>()
 
         for (ep in apiEps) {
@@ -39,8 +39,8 @@ class EpisodeService {
         return dao.get(showId, episodeId)
     }
 
-    suspend fun getMediaUrls(show: String, episodeSlug: String): Map<VEpisodeMedia, String> {
-        return apiService.getEpisodeMediaUrls(show, episodeSlug)
+    suspend fun getMediaUrls(authHash: String, show: String, episodeSlug: String): Map<VEpisodeMedia, String> {
+        return apiService.getEpisodeMediaUrls(authHash, show, episodeSlug)
     }
 
     suspend fun toggleWatchedStatus(showId: String, episodeId: Int, context: Context) {

@@ -5,9 +5,11 @@ import dev.sandrocaseiro.sacocheiotv.models.api.AEpisode
 import dev.sandrocaseiro.sacocheiotv.models.views.VEpisodeMedia
 import io.ktor.client.HttpClient
 import io.ktor.client.request.cookie
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.parameters
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -19,9 +21,33 @@ class ApiService {
 
 //    https://sacocheio.tv/podcast/saco-cheio/__data.json?x-sveltekit-invalidated=11
 
-    private suspend fun getEpisodeInfo(show: String, episodeSlug: String): Map<String, Any> {
+    suspend fun authenticate(username: String, password: String): String? {
+        Log.d(TAG, "API Authentication")
+
+        val resp = client.submitForm(
+            url = "https://sacocheio.tv/entrar",
+            formParameters = parameters {
+                append("username", username)
+                append("password", password)
+            }
+        ) {
+            header("referer", "https://sacocheio.tv/entrar")
+            header("origin", "https://sacocheio.tv")
+        }
+
+        Log.d(TAG, "Status: ${resp.status}")
+        Log.d(TAG, "Cookies: ${resp.headers["set-cookie"]}")
+
+        val cookies = resp.headers["set-cookie"] ?: ""
+        if (!cookies.contains(AUTH_COOKIE))
+            return null
+
+        return cookies.split(';')[0].split('=')[1]
+    }
+
+    private suspend fun getEpisodeInfo(authHash: String, show: String, episodeSlug: String): Map<String, Any> {
         val resp = client.get("https://sacocheio.tv/podcast/$show/$episodeSlug/__data.json") {
-            cookie("auth_session", AUTH)
+            cookie(AUTH_COOKIE, authHash)
         }
 
         val responseData = resp.bodyAsText()
@@ -73,10 +99,10 @@ class ApiService {
         return videoUrls
     }
 
-    suspend fun getEpisodes(show: String): List<AEpisode> {
+    suspend fun getEpisodes(authHash: String, show: String): List<AEpisode> {
         val eps = mutableListOf<AEpisode>()
         val resp = client.get("https://sacocheio.tv/podcast/$show") {
-            cookie("auth_session", AUTH)
+            cookie(AUTH_COOKIE, authHash)
         }
 
         val rssSource = resp.bodyAsText()
@@ -119,9 +145,9 @@ class ApiService {
         return eps
     }
 
-    suspend fun getEpisodeMediaUrls(show: String, episodeSlug: String): Map<VEpisodeMedia, String> {
+    suspend fun getEpisodeMediaUrls(authHash: String, show: String, episodeSlug: String): Map<VEpisodeMedia, String> {
         val media = mutableMapOf<VEpisodeMedia, String>()
-        val episodeInfo = getEpisodeInfo(show, episodeSlug)
+        val episodeInfo = getEpisodeInfo(authHash, show, episodeSlug)
         if (episodeInfo[EPISODE_VIDEO_URL] != null && episodeInfo[EPISODE_VIDEO_URL] != "") {
             val videoUrls = getVideoUrls(episodeInfo[EPISODE_VIDEO_URL].toString())
             if (videoUrls["1080p"] != null)
@@ -143,7 +169,7 @@ class ApiService {
 
     companion object {
         private const val TAG = "ApiService"
-        private const val AUTH = "1234"
+        private const val AUTH_COOKIE = "auth_session"
 
         private const val EPISODE_VIDEO_URL = "urlMp4"
         private const val EPISODE_AUDIO_URL = "urlMp3"
